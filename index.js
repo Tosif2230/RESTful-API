@@ -39,11 +39,22 @@ const users = [
 
 // Routes //
 app.get("/", (req, res) => {
-  res.send("Hello");
+  res.send("Hello from server.");
 });
 //Fetching user data
 app.get("/users", (req, res) => {
   res.send(users);
+});
+
+//Fetching details of a specific user by ID
+app.get("/users/:id", (req, res) => {
+  const user = users.find((user) => user.id === req.params.id);
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json(user);
 });
 
 //Add New User
@@ -80,3 +91,17 @@ app.put("/user/:id", (req, res) => {
 
   res.send(users)
 });
+
+// Deleting any user by its id.
+app.delete("/user/:id",(req,res)=>{
+    const userId = req.params.id;
+
+    const user = users.find((user=>user.id == userId));
+
+    if(!user){
+        return res.status(404).json({message: "User Not Found"});
+    };
+    const filterUser = users.filter((user)=>user.id != userId);
+
+    res.send(filterUser);
+})
