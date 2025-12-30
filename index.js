@@ -3,11 +3,29 @@ import express from "express";
 const app = express();
 const port = 8080;
 
+// Server
 app.listen(port, () => {
   console.log(`Server Is Connected by PORT,${port}`);
 });
-//for passing the json data this is middleware
+
+//Middleware
+//for parse the json data this is middleware
 app.use(express.json());
+
+app.use((req,res,next)=>{
+  console.log(`${req.method}${req.url}`);
+  next();
+});
+
+//Validate middleware
+const validateUser = (req,res,next)=>{
+  const {firstName,lastName,hobby} = req.body;
+
+  if(!firstName||!lastName||!hobby){
+    return res.status(400).json({message: "firstName,lastName,hobby must be required"})
+  }
+  next();
+}
 
 // Data Source //
 const users = [
@@ -39,11 +57,11 @@ const users = [
 
 // Routes //
 app.get("/", (req, res) => {
-  res.send("Hello from server.");
+  res.status(200).send("Hello from server.");
 });
 //Fetching user data
 app.get("/users", (req, res) => {
-  res.send(users);
+  res.status(200).json(users);
 });
 
 //Fetching details of a specific user by ID
@@ -58,22 +76,22 @@ app.get("/users/:id", (req, res) => {
 });
 
 //Add New User
-app.post("/user", (req, res) => {
+app.post("/user", validateUser, (req, res) => {
   const { firstName, lastName, hobby } = req.body;
 
   const newUser = {
-    id: Math.floor(Math.random() * 10), //math.floor use for remove decimals.
+    id: Math.floor(Math.random()*10).toString(),
     firstName: firstName,
     lastName: lastName,
     hobby: hobby,
   };
 
   users.push(newUser);
-  res.send(users);
+  res.status(201).json(users);
 });
 
 //Update User or any data
-app.put("/user/:id", (req, res) => {
+app.put("/user/:id",validateUser, (req, res) => {
   const userId = req.params.id;
 
   const user = users.find((user) => user.id == userId);
@@ -89,19 +107,18 @@ app.put("/user/:id", (req, res) => {
     user[key] = req.body[key]; //updating the keys
   });
 
-  res.send(users)
+  res.status(200).json(users);
 });
 
 // Deleting any user by its id.
-app.delete("/user/:id",(req,res)=>{
-    const userId = req.params.id;
+app.delete("/user/:id", (req, res) => {
+  const index = users.findIndex(user => user.id === req.params.id);
 
-    const user = users.find((user=>user.id == userId));
+  if (index === -1) {
+    return res.status(404).json({ message: "User Not Found" });
+  }
 
-    if(!user){
-        return res.status(404).json({message: "User Not Found"});
-    };
-    const filterUser = users.filter((user)=>user.id != userId);
+  users.splice(index, 1);
+  res.status(200).json({ message: "User deleted successfully" });
+});
 
-    res.send(filterUser);
-})
